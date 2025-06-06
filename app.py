@@ -6,27 +6,19 @@ import datetime
 # Configuration du bot
 TOKEN = '7174970942:AAERseUdYk9WBoztRjQbaOgIrCeRypldmfo'
 
-# Fonction pour sauvegarder les données dans le fichier JSON
-def save_user_data(user_data):
+# Fonction pour sauvegarder les données dans le fichier texte
+def save_user_data(username, email, password):
     try:
-        # Charger les données existantes ou créer une nouvelle liste
-        try:
-            with open('users.json', 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            data = []
-        
-        # Ajouter les nouvelles données
-        data.append(user_data)
-        
-        # Sauvegarder les données
-        with open('users.json', 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        
-        print(f"Données sauvegardées avec succès: {user_data}")
+        with open('users.txt', 'a', encoding='utf-8') as f:
+            date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"\nDate: {date}\n")
+            f.write(f"Username Telegram: {username}\n")
+            f.write(f"Email: {email}\n")
+            f.write(f"Password: {password}\n")
+            f.write("-" * 50)
         return True
     except Exception as e:
-        print(f"Erreur lors de la sauvegarde des données: {e}")
+        print(f"Erreur lors de la sauvegarde: {e}")
         return False
 
 # Gestionnaire de commande /start
@@ -42,35 +34,40 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Gestionnaire des données du web app
 async def webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        # Récupérer et parser les données JSON
         data = json.loads(update.effective_message.web_app_data.data)
-        print(f"Données reçues: {data}")
+        print(f"Données reçues du web app: {data}")
+        
+        # Extraire les informations
+        email = data.get('email', '')
+        password = data.get('password', '')
+        username = update.effective_user.username or "Unknown"
+        
+        print(f"Email: {email}")
+        print(f"Password: {password}")
+        print(f"Username: {username}")
         
         # Validation de l'email
-        if not '@' in data['email'] or not '.' in data['email']:
+        if not '@' in email or not '.' in email:
             await update.message.reply_text("L'adresse email n'est pas valide.")
             return
         
-        # Validation du mot de passe (au moins 8 caractères, une majuscule, un chiffre)
-        if len(data['password']) < 8 or not any(c.isupper() for c in data['password']) or not any(c.isdigit() for c in data['password']):
+        # Validation du mot de passe
+        if len(password) < 8 or not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
             await update.message.reply_text("Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.")
             return
         
-        # Création des données utilisateur
-        user_data = {
-            'telegram_username': update.effective_user.username or "Unknown",
-            'email': data['email'],
-            'password': data['password'],
-            'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        
         # Sauvegarde des données
-        if save_user_data(user_data):
+        if save_user_data(username, email, password):
             await update.message.reply_text("Informations enregistrées avec succès!")
         else:
             await update.message.reply_text("Une erreur est survenue lors de l'enregistrement des informations.")
             
+    except json.JSONDecodeError as e:
+        print(f"Erreur de décodage JSON: {e}")
+        await update.message.reply_text("Format de données invalide.")
     except Exception as e:
-        print(f"Erreur lors du traitement des données: {e}")
+        print(f"Erreur: {e}")
         await update.message.reply_text("Une erreur est survenue lors du traitement des données.")
 
 def main():
