@@ -1,5 +1,5 @@
-// Initialisation de l'application Telegram WebApp
-const tg = window.Telegram.WebApp;
+// Initialisation de Telegram WebApp
+let tg = window.Telegram.WebApp;
 
 // Fonction pour valider l'email
 function validateEmail(email) {
@@ -22,9 +22,22 @@ function resetForm() {
     document.getElementById('passwordError').textContent = '';
 }
 
+// Fonction pour envoyer les données
+function sendData(data) {
+    try {
+        tg.sendData(JSON.stringify(data));
+        return true;
+    } catch (error) {
+        console.error('Erreur lors de l\'envoi des données:', error);
+        return false;
+    }
+}
+
 // Gestionnaire de soumission du formulaire
-document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+document.getElementById('registrationForm').addEventListener('submit', function(e) {
+    // Empêcher le comportement par défaut du formulaire
     e.preventDefault();
+    e.stopPropagation();
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -47,32 +60,25 @@ document.getElementById('registrationForm').addEventListener('submit', async fun
     }
     
     if (isValid) {
-        try {
-            // Vérifier si Telegram WebApp est disponible
-            if (window.Telegram && window.Telegram.WebApp) {
-                // Préparer les données
-                const data = {
-                    email: email,
-                    password: password
-                };
-                
-                // Envoyer les données au bot
-                window.Telegram.WebApp.sendData(JSON.stringify(data));
-                
-                // Réinitialiser le formulaire
-                resetForm();
-                
-                // Afficher un message de succès
-                alert('Inscription réussie!');
-            } else {
-                console.error('Telegram WebApp n\'est pas disponible');
-                alert('Erreur: Telegram WebApp n\'est pas disponible');
-            }
-        } catch (error) {
-            console.error('Erreur lors de l\'envoi des données:', error);
+        // Préparer les données
+        const data = {
+            email: email,
+            password: password
+        };
+        
+        // Envoyer les données
+        if (sendData(data)) {
+            // Réinitialiser le formulaire
+            resetForm();
+            // Afficher un message de succès
+            alert('Inscription réussie!');
+        } else {
             alert('Une erreur est survenue lors de l\'envoi des données');
         }
     }
+    
+    // Empêcher la propagation de l'événement
+    return false;
 });
 
 // Gestionnaire du bouton de fermeture
