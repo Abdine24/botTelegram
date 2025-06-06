@@ -18,40 +18,61 @@ function validatePassword(password) {
 function resetForm() {
     document.getElementById('email').value = '';
     document.getElementById('password').value = '';
+    document.getElementById('emailError').textContent = '';
+    document.getElementById('passwordError').textContent = '';
 }
 
 // Gestionnaire de soumission du formulaire
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+document.getElementById('registrationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    let isValid = true;
     
-    // Validation des champs
+    // Réinitialiser les messages d'erreur
+    document.getElementById('emailError').textContent = '';
+    document.getElementById('passwordError').textContent = '';
+    
+    // Validation de l'email
     if (!validateEmail(email)) {
-        alert('Veuillez entrer une adresse email valide.');
-        return;
+        document.getElementById('emailError').textContent = 'Veuillez entrer une adresse email valide';
+        isValid = false;
     }
     
+    // Validation du mot de passe
     if (!validatePassword(password)) {
-        alert('Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.');
-        return;
+        document.getElementById('passwordError').textContent = 'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre';
+        isValid = false;
     }
     
-    // Préparation des données
-    const formData = {
-        email: email,
-        password: password
-    };
-
-    // Envoi des données au bot Telegram
-    tg.sendData(JSON.stringify(formData));
-    
-    // Réinitialiser le formulaire
-    resetForm();
-    
-    // Afficher un message de confirmation
-    alert('Données envoyées avec succès!');
+    if (isValid) {
+        try {
+            // Vérifier si Telegram WebApp est disponible
+            if (window.Telegram && window.Telegram.WebApp) {
+                // Préparer les données
+                const data = {
+                    email: email,
+                    password: password
+                };
+                
+                // Envoyer les données au bot
+                window.Telegram.WebApp.sendData(JSON.stringify(data));
+                
+                // Réinitialiser le formulaire
+                resetForm();
+                
+                // Afficher un message de succès
+                alert('Inscription réussie!');
+            } else {
+                console.error('Telegram WebApp n\'est pas disponible');
+                alert('Erreur: Telegram WebApp n\'est pas disponible');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi des données:', error);
+            alert('Une erreur est survenue lors de l\'envoi des données');
+        }
+    }
 });
 
 // Gestionnaire du bouton de fermeture
