@@ -2,20 +2,31 @@ from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMar
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import json
 import datetime
+import os
 
 # Configuration du bot
 TOKEN = '7174970942:AAERseUdYk9WBoztRjQbaOgIrCeRypldmfo'
 
-# Fonction pour sauvegarder les données dans le fichier texte
-def save_user_data(username, email, password):
+# Fonction pour sauvegarder les données dans le fichier JSON
+def save_user_data(user_data):
     try:
-        with open('users.txt', 'a', encoding='utf-8') as f:
-            date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"\nDate: {date}\n")
-            f.write(f"Username Telegram: {username}\n")
-            f.write(f"Email: {email}\n")
-            f.write(f"Password: {password}\n")
-            f.write("-" * 50)
+        # Créer le fichier s'il n'existe pas
+        if not os.path.exists('users.json'):
+            with open('users.json', 'w', encoding='utf-8') as f:
+                json.dump([], f)
+        
+        # Lire les données existantes
+        with open('users.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Ajouter les nouvelles données
+        data.append(user_data)
+        
+        # Sauvegarder les données
+        with open('users.json', 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        
+        print(f"Données sauvegardées avec succès: {user_data}")
         return True
     except Exception as e:
         print(f"Erreur lors de la sauvegarde: {e}")
@@ -57,8 +68,16 @@ async def webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.")
             return
         
+        # Création des données utilisateur
+        user_data = {
+            'telegram_username': username,
+            'email': email,
+            'password': password,
+            'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
         # Sauvegarde des données
-        if save_user_data(username, email, password):
+        if save_user_data(user_data):
             await update.message.reply_text("Informations enregistrées avec succès!")
         else:
             await update.message.reply_text("Une erreur est survenue lors de l'enregistrement des informations.")

