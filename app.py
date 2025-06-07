@@ -20,6 +20,7 @@ def save_user_data(user_data):
     try:
         # Chemin du fichier JSON
         json_file = 'users.json'
+        logger.info(f"Tentative de sauvegarde dans {json_file}")
         
         # Créer le fichier s'il n'existe pas
         if not os.path.exists(json_file):
@@ -31,6 +32,7 @@ def save_user_data(user_data):
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+                logger.info(f"Données existantes lues: {len(data)} entrées")
         except json.JSONDecodeError:
             logger.warning("Le fichier JSON était vide ou corrompu, création d'une nouvelle liste")
             data = []
@@ -50,6 +52,7 @@ def save_user_data(user_data):
 
 # Gestionnaire de commande /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.info(f"Commande /start reçue de {update.effective_user.username}")
     keyboard = [
         [InlineKeyboardButton("Ouvrir l'application", web_app=WebAppInfo(url="https://abdine24.github.io/botTelegram/"))]
     ]
@@ -61,9 +64,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Gestionnaire des données du web app
 async def webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        logger.info("Données reçues du web app")
+        logger.info(f"Message complet: {update.effective_message}")
+        
         # Récupérer et parser les données JSON
         data = json.loads(update.effective_message.web_app_data.data)
-        logger.info(f"Données reçues du web app: {data}")
+        logger.info(f"Données parsées: {data}")
         
         # Extraire les informations
         email = data.get('email', '')
@@ -76,11 +82,13 @@ async def webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Validation de l'email
         if not '@' in email or not '.' in email:
+            logger.warning(f"Email invalide: {email}")
             await update.message.reply_text("L'adresse email n'est pas valide.")
             return
         
         # Validation du mot de passe
         if len(password) < 8 or not any(c.isupper() for c in password) or not any(c.isdigit() for c in password):
+            logger.warning("Mot de passe invalide")
             await update.message.reply_text("Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.")
             return
         
@@ -94,15 +102,17 @@ async def webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Sauvegarde des données
         if save_user_data(user_data):
+            logger.info("Données sauvegardées avec succès")
             await update.message.reply_text("Informations enregistrées avec succès!")
         else:
+            logger.error("Échec de la sauvegarde des données")
             await update.message.reply_text("Une erreur est survenue lors de l'enregistrement des informations.")
             
     except json.JSONDecodeError as e:
         logger.error(f"Erreur de décodage JSON: {e}")
         await update.message.reply_text("Format de données invalide.")
     except Exception as e:
-        logger.error(f"Erreur: {e}")
+        logger.error(f"Erreur inattendue: {e}")
         await update.message.reply_text("Une erreur est survenue lors du traitement des données.")
 
 def main():
